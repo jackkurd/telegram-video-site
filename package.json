@@ -1,0 +1,8 @@
+{
+  "name": "telegram-video-player",
+  "version": "1.0.0",
+  "description": "Telegram Video Player with iOS-style design",
+  "dependencies": {
+    "node-fetch": "^2.6.7"
+  }
+}

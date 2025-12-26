@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="ku" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>پێشاندەری ڤیدیۆی تێلێگرام</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --bg-light: #F2F2F7;
+            --bg-dark: #000000;
+            --card-light: #FFFFFF;
+            --card-dark: #1C1C1E;
+            --text-primary-light: #000000;
+            --text-primary-dark: #FFFFFF;
+            --text-secondary-light: #8E8E93;
+            --text-secondary-dark: #8E8E93;
+            --accent: #007AFF;
+            --border-light: #E5E5EA;
+            --border-dark: #38383A;
+            --search-bg-light: #F2F2F7;
+            --search-bg-dark: #2C2C2E;
+        }
+
+        body {
+            font-family: 'Cairo', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-light);
+            color: var(--text-primary-light);
+            min-height: 100vh;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        body.dark {
+            background: var(--bg-dark);
+            color: var(--text-primary-dark);
+        }
+
+        .header {
+            position: sticky;
+            top: 0;
+            background: rgba(242, 242, 247, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            border-bottom: 0.5px solid var(--border-light);
+        }
+
+        body.dark .header {
+            background: rgba(0, 0, 0, 0.8);
+            border-bottom-color: var(--border-dark);
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .theme-toggle {
+            width: 40px;
+            height: 40px;
+            border: none;
+            background: none;
+            font-size: 24px;
+            cursor: pointer;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .theme-toggle:active {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        body.dark .theme-toggle:active {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .search-bar {
+            background: var(--search-bg-light);
+            border-radius: 12px;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            transition: background 0.3s;
+        }
+
+        body.dark .search-bar {
+            background: var(--search-bg-dark);
+        }
+
+        .search-icon {
+            font-size: 18px;
+            color: var(--text-secondary-light);
+        }
+
+        body.dark .search-icon {
+            color: var(--text-secondary-dark);
+        }
+
+        .search-bar input {
+            flex: 1;
+            border: none;
+            background: none;
+            outline: none;
+            font-size: 16px;
+            font-family: 'Cairo', sans-serif;
+            color: var(--text-primary-light);
+        }
+
+        body.dark .search-bar input {
+            color: var(--text-primary-dark);
+        }
+
+        .search-bar input::placeholder {
+            color: var(--text-secondary-light);
+        }
+
+        body.dark .search-bar input::placeholder {
+            color: var(--text-secondary-dark);
+        }
+
+        .video-section {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .video-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .video-card {
+            background: var(--card-light);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+            margin-bottom: 20px;
+        }
+
+        body.dark .video-card {
+            background: var(--card-dark);
+            box-shadow: none;
+        }
+
+        .video-header {
+            padding: 16px 20px;
+            border-bottom: 0.5px solid var(--border-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        body.dark .video-header {
+            border-bottom-color: var(--border-dark);
+        }
+
+        .video-title {
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--accent);
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-family: 'Cairo', sans-serif;
+            transition: background 0.2s;
+        }
+
+        .close-btn:active {
+            background: rgba(0, 122, 255, 0.1);
+        }
+
+        .video-wrapper {
+            position: relative;
+            width: 100%;
+            background: #000;
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .video-player {
+            width: 100%;
+            max-width: 100%;
+            outline: none;
+        }
+
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            gap: 16px;
+        }
+
+        .loading-overlay.hidden {
+            display: none;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: white;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .video-info {
+            padding: 16px 20px;
+            border-top: 0.5px solid var(--border-light);
+        }
+
+        body.dark .video-info {
+            border-top-color: var(--border-dark);
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            font-size: 14px;
+        }
+
+        .info-label {
+            color: var(--text-secondary-light);
+        }
+
+        body.dark .info-label {
+            color: var(--text-secondary-dark);
+        }
+
+        .info-value {
+            font-weight: 500;
+        }
+
+        .download-btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            font-family: 'Cairo', sans-serif;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            margin-top: 12px;
+        }
+
+        .download-btn:active {
+            opacity: 0.8;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+        }
+
+        .empty-icon {
+            font-size: 72px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .empty-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .empty-subtitle {
+            font-size: 15px;
+            color: var(--text-secondary-light);
+            line-height: 1.5;
+        }
+
+        body.dark .empty-subtitle {
+            color: var(--text-secondary-dark);
+        }
+
+        .examples-card {
+            background: var(--card-light);
+            border-radius: 16px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        }
+
+        body.dark .examples-card {
+            background: var(--card-dark);
+            box-shadow: none;
+        }
+
+        .examples-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .example-item {
+            background: var(--search-bg-light);
+            padding: 14px 16px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: var(--text-secondary-light);
+            cursor: pointer;
+            transition: all 0.2s;
+            word-break: break-all;
+        }
+
+        body.dark .example-item {
+            background: var(--search-bg-dark);
+            color: var(--text-secondary-dark);
+        }
+
+        .example-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .example-item:active {
+            transform: scale(0.98);
+            opacity: 0.7;
+        }
+
+        .info-box {
+            background: #E3F2FD;
+            border: 1px solid #90CAF9;
+            color: #1565C0;
+            padding: 16px;
+            border-radius: 12px;
+            margin-top: 20px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        body.dark .info-box {
+            background: #1A2332;
+            border-color: #2E4156;
+            color: #90CAF9;
+        }
+
+        .info-box-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .error-toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #FF3B30;
+            color: white;
+            padding: 14px 20px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 500;
+            box-shadow: 0 4px 20px rgba(255, 59, 48, 0.4);
+            z-index: 1000;
+            transition: transform 0.3s ease;
+            max-width: 90%;
+            text-align: center;
+        }
+
+        .error-toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .container {
+                padding: 16px;
+            }
+
+            .empty-state {
+                padding: 60px 20px;
+            }
+
+            .empty-icon {
+                font-size: 64px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>ڤیدیۆی تێلێگرام</h1>
+        <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+            <span id="themeIcon">☀️</span>
+        </button>
+    </div>
+
+    <div class="container">
+        <div class="search-bar">
+            <span class="search-icon">🔗</span>
+            <input 
+                type="text" 
+                id="videoInput" 
+                placeholder="لینکی ڤیدیۆ لێرە دابنێ..."
+                autocomplete="off"
+                onkeypress="handleEnter(event)"
+            >
+        </div>
+
+        <div class="video-section" id="videoSection">
+            <div class="video-card">
+                <div class="video-header">
+                    <div class="video-title">
+                        <span>📺</span>
+                        <span id="videoHeaderTitle">ڤیدیۆی تێلێگرام</span>
+                    </div>
+                    <button class="close-btn" onclick="closeVideo()">داخستن</button>
+                </div>
+                <div class="video-wrapper">
+                    <div class="loading-overlay" id="loadingOverlay">
+                        <div class="spinner"></div>
+                        <div class="loading-text">باری ڤیدیۆ دەکرێت...</div>
+                    </div>
+                    <video 
+                        id="videoPlayer" 
+                        class="video-player" 
+                        controls 
+                        playsinline
+                        preload="metadata"
+                    >
+                        وێبگەڕەکەت پشتیوانی ڤیدیۆ ناکات.
+                    </video>
+                </div>
+                <div class="video-info" id="videoInfo" style="display: none;">
+                    <div class="info-row">
+                        <span class="info-label">قەبارە:</span>
+                        <span class="info-value" id="videoSize">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">درێژی:</span>
+                        <span class="info-value" id="videoDuration">-</span>
+                    </div>
+                    <button class="download-btn" id="downloadBtn" onclick="downloadVideo()">
+                        دابەزاندنی ڤیدیۆ ⬇️
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="empty-state" id="emptyState">
+            <div class="empty-icon">🎬</div>
+            <div class="empty-title">پێشاندەری ڤیدیۆ</div>
+            <div class="empty-subtitle">
+                لینکی ڤیدیۆی تێلێگرام لە سەرەوە دابنێ<br>
+                بۆ سەیرکردنی ڤیدیۆکە
+            </div>
+        </div>
+
+        <div class="examples-card">
+            <div class="examples-title">
+                <span>💡</span>
+                <span>نموونەی لینک</span>
+            </div>
+            <div class="example-item" onclick="useExample(this)">
+                https://t.me/channel_name/123
+            </div>
+            <div class="example-item" onclick="useExample(this)">
+                https://t.me/c/1234567890/456
+            </div>
+            <div class="example-item" onclick="useExample(this)">
+                t.me/channel_name/789
+            </div>
+        </div>
+
+        <div class="info-box">
+            <div class="info-box-title">
+                <span>ℹ️</span>
+                <span>چۆن کاردەکات؟</span>
+            </div>
+            ئەم وێبسایتە لە ڕێگەی Telegram Bot API ڤیدیۆکان دەهێنێت. بۆیە پێویستە بۆتەکە ئەندامی کەناڵەکە بێت بۆ ئەوەی بتوانێت ڤیدیۆکان بهێنێت.
+        </div>
+    </div>
+
+    <div class="error-toast" id="errorToast"></div>
+
+    <script>
+        let currentVideoUrl = null;
+
+        // Theme Management
+        function toggleTheme() {
+            document.body.classList.toggle('dark');
+            const icon = document.getElementById('themeIcon');
+            const isDark = document.body.classList.contains('dark');
+            icon.textContent = isDark ? '🌙' : '☀️';
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        }
+
+        // Load saved theme
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark');
+                document.getElementById('themeIcon').textContent = '🌙';
+            }
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const videoParam = urlParams.get('video') || urlParams.get('v') || urlParams.get('url');
+            
+            if (videoParam) {
+                document.getElementById('videoInput').value = decodeURIComponent(videoParam);
+                loadVideo();
+            }
+        });
+
+        // Handle Enter Key
+        function handleEnter(event) {
+            if (event.key === 'Enter') {
+                loadVideo();
+            }
+        }
+
+        // Parse Telegram URL
+        function parseTelegramUrl(url) {
+            url = url.trim();
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                url = 'https://' + url;
+            }
+
+            let match = url.match(/(?:https?:\/\/)?t\.me\/([^\/\?]+)\/(\d+)/);
+            if (match && match[1] !== 'c') {
+                return { channel: match[1], messageId: match[2], type: 'username' };
+            }
+
+            match = url.match(/(?:https?:\/\/)?t\.me\/c\/([^\/\?]+)\/(\d+)/);
+            if (match) {
+                return { channel: match[1], messageId: match[2], type: 'private' };
+            }
+
+            return null;
+        }
+
+        // Load Video Function
+        async function loadVideo() {
+            const input = document.getElementById('videoInput');
+            const url = input.value.trim();
+
+            if (!url) {
+                showError('تکایە لینکێک دابنێ');
+                return;
+            }
+
+            const parsed = parseTelegramUrl(url);
+
+            if (!parsed) {
+                showError('لینکەکە هەڵەیە. تکایە لینکێکی دروستی تێلێگرام دابنێ');
+                return;
+            }
+
+            // Show loading
+            document.getElementById('emptyState').style.display = 'none';
+            document.getElementById('videoSection').classList.add('active');
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+            document.getElementById('videoInfo').style.display = 'none';
+
+            try {
+                // Call Netlify Function
+                const response = await fetch(`/.netlify/functions/get-video`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        channel: parsed.channel,
+                        messageId: parsed.messageId,
+                        type: parsed.type
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('کێشەیەک هەیە لە هێنانی ڤیدیۆکە');
+                }
+
+                const data = await response.json();
+
+                if (data.videoUrl) {
+                    displayVideo(data.videoUrl, data);
+                    
+                    const newUrl = window.location.pathname + '?video=' + encodeURIComponent(url);
+                    window.history.pushState({}, '', newUrl);
+                } else {
+                    throw new Error(data.error || 'ڤیدیۆکە نەدۆزرایەوە');
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                showError(error.message || 'کێشەیەک هەیە لە هێنانی ڤیدیۆکە. دڵنیابەرەوە کە بۆتەکە ئەندامی کەناڵەکەیە.');
+                document.getElementById('loadingOverlay').classList.add('hidden');
+            }
+        }
+
+        // Display Video
+        function displayVideo(videoUrl, data) {
+            currentVideoUrl = videoUrl;
+            const player = document.getElementById('videoPlayer');
+            const loader = document.getElementById('loadingOverlay');
+            
+            player.src = videoUrl;
+            
+            player.onloadedmetadata = () => {
+                loader.classList.add('hidden');
+                document.getElementById('videoInfo').style.display = 'block';
+                
+                const duration = formatDuration(player.duration);
+                document.getElementById('videoDuration').textContent = duration;
+                
+                if (data.fileSize) {
+                    document.getElementById('videoSize').textContent = formatFileSize(data.fileSize);
+                }
+            };
+
+            player.onerror = () => {
+                loader.classList.add('hidden');
+                showError('کێشەیەک هەیە لە لێدانی ڤیدیۆکە');
+            };
+
+            setTimeout(() => {
+                document.getElementById('videoSection').scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'start' 
+                });
+            }, 100);
+        }
+
+        // Format Duration
+        function formatDuration(seconds) {
+            if (!seconds || isNaN(seconds)) return '-';
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // Format File Size
+        function formatFileSize(bytes) {
+            if (!bytes) return '-';
+            const mb = (bytes / (1024 * 1024)).toFixed(2);
+            return `${mb} MB`;
+        }
+
+        // Download Video
+        function downloadVideo() {
+            if (currentVideoUrl) {
+                const a = document.createElement('a');
+                a.href = currentVideoUrl;
+                a.download = 'telegram-video.mp4';
+                a.target = '_blank';
+                a.click();
+            }
+        }
+
+        // Close Video
+        function closeVideo() {
+            const videoSection = document.getElementById('videoSection');
+            const player = document.getElementById('videoPlayer');
+            const emptyState = document.getElementById('emptyState');
+            
+            player.pause();
+            player.src = '';
+            currentVideoUrl = null;
+            
+            videoSection.classList.remove('active');
+            
+            setTimeout(() => {
+                emptyState.style.display = 'block';
+            }, 300);
+
+            window.history.pushState({}, '', window.location.pathname);
+            document.getElementById('videoInput').value = '';
+        }
+
+        // Show Error Toast
+        function showError(message) {
+            const toast = document.getElementById('errorToast');
+            toast.textContent = message;
+            toast.classList.add('show');
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 4000);
+        }
+
+        // Use Example
+        function useExample(element) {
+            const text = element.textContent.trim();
+            document.getElementById('videoInput').value = text;
+        }
+    </script>
+</body>
+</html>
