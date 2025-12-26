@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>پێشاندەری ڤیدیۆی تێلێگرام</title>
+    <title>جــاک ڤیدیۆیی تیلیگرام</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap');
 
@@ -216,17 +216,21 @@
         .video-wrapper {
             position: relative;
             width: 100%;
-            background: #000;
-            min-height: 300px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            padding-bottom: 56.25%;
+            background: #F8F9FA;
         }
 
-        .video-player {
+        body.dark .video-wrapper {
+            background: #1A1A1C;
+        }
+
+        .video-iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
-            max-width: 100%;
-            outline: none;
+            height: 100%;
+            border: none;
         }
 
         .loading-overlay {
@@ -235,7 +239,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.9);
+            background: rgba(0, 0, 0, 0.8);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -267,37 +271,19 @@
             font-weight: 500;
         }
 
-        .video-info {
+        .video-actions {
             padding: 16px 20px;
             border-top: 0.5px solid var(--border-light);
+            display: flex;
+            gap: 10px;
         }
 
-        body.dark .video-info {
+        body.dark .video-actions {
             border-top-color: var(--border-dark);
         }
 
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 0;
-            font-size: 14px;
-        }
-
-        .info-label {
-            color: var(--text-secondary-light);
-        }
-
-        body.dark .info-label {
-            color: var(--text-secondary-dark);
-        }
-
-        .info-value {
-            font-weight: 500;
-        }
-
-        .download-btn {
-            width: 100%;
+        .action-btn {
+            flex: 1;
             padding: 12px;
             background: var(--accent);
             color: white;
@@ -308,11 +294,24 @@
             font-family: 'Cairo', sans-serif;
             cursor: pointer;
             transition: opacity 0.2s;
-            margin-top: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
         }
 
-        .download-btn:active {
+        .action-btn:active {
             opacity: 0.8;
+        }
+
+        .action-btn.secondary {
+            background: var(--search-bg-light);
+            color: var(--text-primary-light);
+        }
+
+        body.dark .action-btn.secondary {
+            background: var(--search-bg-dark);
+            color: var(--text-primary-dark);
         }
 
         .empty-state {
@@ -454,8 +453,13 @@
             .empty-icon {
                 font-size: 64px;
             }
+
+            .video-actions {
+                flex-direction: column;
+            }
         }
     </style>
+    <script async src="https://telegram.org/js/telegram-widget.js?22"></script>
 </head>
 <body>
     <div class="header">
@@ -482,7 +486,7 @@
                 <div class="video-header">
                     <div class="video-title">
                         <span>📺</span>
-                        <span id="videoHeaderTitle">ڤیدیۆی تێلێگرام</span>
+                        <span>ڤیدیۆی تێلێگرام</span>
                     </div>
                     <button class="close-btn" onclick="closeVideo()">داخستن</button>
                 </div>
@@ -491,27 +495,16 @@
                         <div class="spinner"></div>
                         <div class="loading-text">باری ڤیدیۆ دەکرێت...</div>
                     </div>
-                    <video 
-                        id="videoPlayer" 
-                        class="video-player" 
-                        controls 
-                        playsinline
-                        preload="metadata"
-                    >
-                        وێبگەڕەکەت پشتیوانی ڤیدیۆ ناکات.
-                    </video>
+                    <div id="telegramPost"></div>
                 </div>
-                <div class="video-info" id="videoInfo" style="display: none;">
-                    <div class="info-row">
-                        <span class="info-label">قەبارە:</span>
-                        <span class="info-value" id="videoSize">-</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">درێژی:</span>
-                        <span class="info-value" id="videoDuration">-</span>
-                    </div>
-                    <button class="download-btn" id="downloadBtn" onclick="downloadVideo()">
-                        دابەزاندنی ڤیدیۆ ⬇️
+                <div class="video-actions">
+                    <button class="action-btn" id="openTelegramBtn" onclick="openInTelegram()">
+                        <span>کردنەوە لە تێلێگرام</span>
+                        <span>✈️</span>
+                    </button>
+                    <button class="action-btn secondary" onclick="copyLink()">
+                        <span>کۆپی کردنی لینک</span>
+                        <span>📋</span>
                     </button>
                 </div>
             </div>
@@ -538,7 +531,7 @@
                 https://t.me/c/1234567890/456
             </div>
             <div class="example-item" onclick="useExample(this)">
-                t.me/channel_name/789
+                t.me/kurdish_movies/789
             </div>
         </div>
 
@@ -547,14 +540,14 @@
                 <span>ℹ️</span>
                 <span>چۆن کاردەکات؟</span>
             </div>
-            ئەم وێبسایتە لە ڕێگەی Telegram Bot API ڤیدیۆکان دەهێنێت. بۆیە پێویستە بۆتەکە ئەندامی کەناڵەکە بێت بۆ ئەوەی بتوانێت ڤیدیۆکان بهێنێت.
+            ئەم وێبسایتە widget-ی فەرمی تێلێگرام بەکاردەهێنێت بۆ پێشاندانی پەیامەکان. بۆ بینینی تەواوی ڤیدیۆکە، لە تێلێگرام بیکەرەوە.
         </div>
     </div>
 
     <div class="error-toast" id="errorToast"></div>
 
     <script>
-        let currentVideoUrl = null;
+        let currentUrl = null;
 
         // Theme Management
         function toggleTheme() {
@@ -596,21 +589,23 @@
                 url = 'https://' + url;
             }
 
+            // Match t.me/username/id
             let match = url.match(/(?:https?:\/\/)?t\.me\/([^\/\?]+)\/(\d+)/);
             if (match && match[1] !== 'c') {
-                return { channel: match[1], messageId: match[2], type: 'username' };
+                return { username: match[1], messageId: match[2], fullUrl: url };
             }
 
+            // Match t.me/c/id/msgid (private channel)
             match = url.match(/(?:https?:\/\/)?t\.me\/c\/([^\/\?]+)\/(\d+)/);
             if (match) {
-                return { channel: match[1], messageId: match[2], type: 'private' };
+                return { username: null, messageId: match[2], fullUrl: url };
             }
 
             return null;
         }
 
-        // Load Video Function
-        async function loadVideo() {
+        // Load Video
+        function loadVideo() {
             const input = document.getElementById('videoInput');
             const url = input.value.trim();
 
@@ -626,73 +621,46 @@
                 return;
             }
 
-            // Show loading
+            // Check if it's a private channel
+            if (!parsed.username) {
+                showError('کەناڵە تایبەتەکان پشتیوانی ناکرێن. تکایە لینکێکی کەناڵی گشتی بەکاربهێنە');
+                return;
+            }
+
+            currentUrl = parsed.fullUrl;
+
+            // Show video section
             document.getElementById('emptyState').style.display = 'none';
             document.getElementById('videoSection').classList.add('active');
             document.getElementById('loadingOverlay').classList.remove('hidden');
-            document.getElementById('videoInfo').style.display = 'none';
 
-            try {
-                // Call Netlify Function
-                const response = await fetch(`/.netlify/functions/get-video`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        channel: parsed.channel,
-                        messageId: parsed.messageId,
-                        type: parsed.type
-                    })
-                });
+            // Clear previous content
+            const postContainer = document.getElementById('telegramPost');
+            postContainer.innerHTML = '';
 
-                if (!response.ok) {
-                    throw new Error('کێشەیەک هەیە لە هێنانی ڤیدیۆکە');
-                }
+            // Create Telegram widget
+            const script = document.createElement('script');
+            script.async = true;
+            script.src = 'https://telegram.org/js/telegram-widget.js?22';
+            script.setAttribute('data-telegram-post', `${parsed.username}/${parsed.messageId}`);
+            script.setAttribute('data-width', '100%');
+            script.setAttribute('data-userpic', 'false');
+            script.setAttribute('data-dark', document.body.classList.contains('dark') ? '1' : '0');
 
-                const data = await response.json();
-
-                if (data.videoUrl) {
-                    displayVideo(data.videoUrl, data);
-                    
-                    const newUrl = window.location.pathname + '?video=' + encodeURIComponent(url);
-                    window.history.pushState({}, '', newUrl);
-                } else {
-                    throw new Error(data.error || 'ڤیدیۆکە نەدۆزرایەوە');
-                }
-
-            } catch (error) {
-                console.error('Error:', error);
-                showError(error.message || 'کێشەیەک هەیە لە هێنانی ڤیدیۆکە. دڵنیابەرەوە کە بۆتەکە ئەندامی کەناڵەکەیە.');
-                document.getElementById('loadingOverlay').classList.add('hidden');
-            }
-        }
-
-        // Display Video
-        function displayVideo(videoUrl, data) {
-            currentVideoUrl = videoUrl;
-            const player = document.getElementById('videoPlayer');
-            const loader = document.getElementById('loadingOverlay');
-            
-            player.src = videoUrl;
-            
-            player.onloadedmetadata = () => {
-                loader.classList.add('hidden');
-                document.getElementById('videoInfo').style.display = 'block';
-                
-                const duration = formatDuration(player.duration);
-                document.getElementById('videoDuration').textContent = duration;
-                
-                if (data.fileSize) {
-                    document.getElementById('videoSize').textContent = formatFileSize(data.fileSize);
-                }
+            // Add onload handler
+            script.onload = () => {
+                setTimeout(() => {
+                    document.getElementById('loadingOverlay').classList.add('hidden');
+                }, 1000);
             };
 
-            player.onerror = () => {
-                loader.classList.add('hidden');
-                showError('کێشەیەک هەیە لە لێدانی ڤیدیۆکە');
-            };
+            postContainer.appendChild(script);
 
+            // Update URL
+            const newUrl = window.location.pathname + '?video=' + encodeURIComponent(url);
+            window.history.pushState({}, '', newUrl);
+
+            // Scroll to video
             setTimeout(() => {
                 document.getElementById('videoSection').scrollIntoView({ 
                     behavior: 'smooth', 
@@ -701,41 +669,30 @@
             }, 100);
         }
 
-        // Format Duration
-        function formatDuration(seconds) {
-            if (!seconds || isNaN(seconds)) return '-';
-            const mins = Math.floor(seconds / 60);
-            const secs = Math.floor(seconds % 60);
-            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        // Open in Telegram
+        function openInTelegram() {
+            if (currentUrl) {
+                window.open(currentUrl, '_blank');
+            }
         }
 
-        // Format File Size
-        function formatFileSize(bytes) {
-            if (!bytes) return '-';
-            const mb = (bytes / (1024 * 1024)).toFixed(2);
-            return `${mb} MB`;
-        }
-
-        // Download Video
-        function downloadVideo() {
-            if (currentVideoUrl) {
-                const a = document.createElement('a');
-                a.href = currentVideoUrl;
-                a.download = 'telegram-video.mp4';
-                a.target = '_blank';
-                a.click();
+        // Copy Link
+        function copyLink() {
+            if (currentUrl) {
+                navigator.clipboard.writeText(currentUrl).then(() => {
+                    showError('لینکەکە کۆپی کرا! ✓', false);
+                });
             }
         }
 
         // Close Video
         function closeVideo() {
             const videoSection = document.getElementById('videoSection');
-            const player = document.getElementById('videoPlayer');
             const emptyState = document.getElementById('emptyState');
+            const postContainer = document.getElementById('telegramPost');
             
-            player.pause();
-            player.src = '';
-            currentVideoUrl = null;
+            postContainer.innerHTML = '';
+            currentUrl = null;
             
             videoSection.classList.remove('active');
             
@@ -747,21 +704,23 @@
             document.getElementById('videoInput').value = '';
         }
 
-        // Show Error Toast
-        function showError(message) {
+        // Show Error/Success Toast
+        function showError(message, isError = true) {
             const toast = document.getElementById('errorToast');
             toast.textContent = message;
+            toast.style.background = isError ? '#FF3B30' : '#34C759';
             toast.classList.add('show');
 
             setTimeout(() => {
                 toast.classList.remove('show');
-            }, 4000);
+            }, 3000);
         }
 
         // Use Example
         function useExample(element) {
             const text = element.textContent.trim();
             document.getElementById('videoInput').value = text;
+            loadVideo();
         }
     </script>
 </body>
